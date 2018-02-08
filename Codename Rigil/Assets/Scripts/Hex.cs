@@ -4,20 +4,6 @@ using UnityEngine;
 
 public class Hex : MonoBehaviour {
 
-    //Struct used for referencing coorinates in a hexgrid
-    public struct HexCooridnates
-    {
-        public int _x { get; private set; }
-
-        public int _z { get; private set; }
-
-        public HexCooridnates(int x, int z)
-        {
-            _x = x;
-            _z = z;
-        }
-    }
-
     enum MovementType
     {
         Passable,
@@ -37,8 +23,9 @@ public class Hex : MonoBehaviour {
     private MovementType _movementRestriction;
     private TerrainMovementModifier _movementModifer;
     private Map _map;
-    private HexCooridnates _cooridnates;
+    private Map.HexCooridnates _cooridnates;
     private bool[] _factionInfluence;
+    private Color _colour;
 
     private void Start()
     {
@@ -48,5 +35,76 @@ public class Hex : MonoBehaviour {
         _map = this.transform.parent.GetComponent<Map>();
         uint _numberOfPlayers = _map.GetNumberOfPlayers();
         _factionInfluence = new bool[_numberOfPlayers];
+    }
+
+    private void OnMouseDown()
+    {
+        _map.HexSelected(_cooridnates);
+    }
+
+    private float GetTerrainDifficulty(TerrainMovementModifier i)
+    {
+        switch (i)
+        {
+            case TerrainMovementModifier.Easy:
+                return 0.75f;
+            case TerrainMovementModifier.Normal:
+                return 1.0f;
+            case TerrainMovementModifier.Hard:
+                return 1.25f;
+            default:
+                return 1.0f;
+        }
+    }
+
+    public float MovementRequirements
+    {
+        get
+        {
+            return _movementRequirement * GetTerrainDifficulty(_movementModifer);
+        }
+    }
+
+    public bool Occupied
+    {
+        get
+        {
+            return _movementRestriction == MovementType.Occupied;
+        }
+        set
+        {
+            if (value == true)
+            {
+                _movementRestriction = MovementType.Occupied;
+            }
+            else
+            {
+                _movementRestriction = MovementType.Passable;
+            }
+        }
+    }
+
+    public Map.HexCooridnates Coords
+    {
+        get
+        {
+            return _cooridnates;
+        }
+        set
+        {
+            _cooridnates = value;
+        }
+    }
+
+    public Color Colour
+    {
+        get
+        {
+            return _colour;
+        }
+        set
+        {
+            _colour = value;
+        }
     }
 }

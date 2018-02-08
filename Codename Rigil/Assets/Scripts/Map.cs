@@ -59,4 +59,8 @@ public class Map : MonoBehaviour {
         return _levelManager.NumberOfPlayers;
     }
 
+    public void HexSelected(HexCooridnates coords)
+    {
+
+    }
 }
