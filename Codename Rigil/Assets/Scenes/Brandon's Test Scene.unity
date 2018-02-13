@@ -141,6 +141,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e555ff58f77851047b001e0c8d765386, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _hexObject: {fileID: 114282522280253082, guid: 219518ae0ed84814c8e4f8e832321972,
+    type: 2}
+  _mapShape: 0
+  _dimensions: 0a0000000a000000
 --- !u!114 &896871134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,19 +156,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20d90c339266e8e4a8b09ccdbcea7c20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _numberOfPlayers: 2
 --- !u!4 &896871135
 Transform:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 896871132}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &1577935071
 GameObject:
   m_ObjectHideFlags: 0
@@ -215,7 +220,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 90
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -239,13 +244,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1577935071}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.60876137, y: 0, z: 0, w: 0.7933534}
+  m_LocalPosition: {x: 15, y: 16, z: 8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 75, y: 0, z: 0}
 --- !u!1 &1797616300
 GameObject:
   m_ObjectHideFlags: 0

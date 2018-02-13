@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Hex : MonoBehaviour {
 
@@ -26,22 +27,31 @@ public class Hex : MonoBehaviour {
     private Map.HexCooridnates _cooridnates;
     private bool[] _factionInfluence;
     private Color _colour;
+    private SpriteRenderer _renderer;
 
     private void Start()
     {
-        _movementRequirement = 1.0f;
-        _movementRestriction = MovementType.Passable;
-        _movementModifer = TerrainMovementModifier.Normal;
+        //Sets the value of all required variables
         _map = this.transform.parent.GetComponent<Map>();
         uint _numberOfPlayers = _map.GetNumberOfPlayers();
         _factionInfluence = new bool[_numberOfPlayers];
+
+        _renderer = GetComponent<SpriteRenderer>();
+
+
+
+        _movementRequirement = 1.0f;
+        _movementRestriction = MovementType.Passable;
+        _movementModifer = TerrainMovementModifier.Normal;
     }
 
-    private void OnMouseDown()
+    //Debug function to test functionality
+    void OnMouseDown()
     {
-        _map.HexSelected(_cooridnates);
+        Debug.Log("Sprite Clicked");
     }
 
+    //Returns the terrain difficulty modifier as a float, is taken into account but currently tiles dont have different modifiers
     private float GetTerrainDifficulty(TerrainMovementModifier i)
     {
         switch (i)
@@ -105,6 +115,7 @@ public class Hex : MonoBehaviour {
         set
         {
             _colour = value;
+            _renderer.color = _colour;
         }
     }
 }
