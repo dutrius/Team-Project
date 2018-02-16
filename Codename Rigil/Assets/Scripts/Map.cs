@@ -36,12 +36,19 @@ public class Map : MonoBehaviour {
     enum MapType { Quad }
 
     //Used to generate the correct distance between hexes
-    private const float HexWidth = 3.8f;
-    private const float HexHeight = 4.4f;
+    private const float DefaultHexWidth = 0.038f;
+    private const float DefaultHexHeight = 0.044f;
+    private const float Scale = 4.0f;
+
+    private const float HexWidth = DefaultHexWidth * Scale;
+    private const float HexHeight = DefaultHexHeight * Scale;
 
     //The prefab of the hex object
     [SerializeField]
     private Hex _hexObject;
+    [SerializeField]
+    private GameObject _heightControl;
+    private GameObject[] _heightControllers;
 
     //Used if other map generation options are wanted in the future
     [SerializeField]
@@ -51,43 +58,19 @@ public class Map : MonoBehaviour {
     //TODO : Make a list so different parameter signatures can be used for alternative map generator options and shapes
     [SerializeField]
     private uint[] _dimensions = new uint[] { 10, 10 };
+    private float _xOffset;
+    private float _yOffset;
 
     //Reference to the level manager
     private LevelManager _levelManager;
     private Hex[,] _hexes;
 
-    //Used only for debugging
-    public void Update()
-    {
-        if (Input.GetKeyDown("q"))
-        {
-            SelectCell(new HexCooridnates(3,3));
-        }
-        if (Input.GetKeyDown("w"))
-        {
-            HighlightCells(GetHexesInRange(new HexCooridnates(3, 3), 1.0f));
-        }
-        if (Input.GetKeyDown("e"))
-        {
-            HighlightCells(GetHexesInRange(new HexCooridnates(3, 3), 2.0f));
-        }
-        if (Input.GetKeyDown("r"))
-        {
-            HighlightCells(GetHexesInRange(new HexCooridnates(3, 3), 3.0f));
-        }
-        if (Input.GetKeyDown("t"))
-        {
-            HighlightCells(GetHexesInRange(new HexCooridnates(3, 3), 1.0f, 4.0f));
-        }
-        if (Input.GetKeyDown("y"))
-        {
-            HighlightCells(GetHexesInRange(new HexCooridnates(3, 3), 2.0f, 4.0f));
-        }
-    }
-
-
     private void Start()
     {
+        //Used to offset the map so its centered on the map manager
+        _xOffset = _dimensions[0] * HexWidth / 2;
+        _yOffset = _dimensions[1] * HexHeight / 2;
+
         _hexes = new Hex[_dimensions[0], _dimensions[1]];
         _levelManager = this.transform.GetComponent<LevelManager>();
         switch (_mapShape)
@@ -108,19 +91,32 @@ public class Map : MonoBehaviour {
                 _hexes[x, y] = GenerateHex(x, y, i++);
             }
         }
+        
+        GameObject[] _heightControllers = new GameObject[4];
+        for(int i = 0; i < 4; i++)
+        {
+            _heightControllers[i] = Instantiate(_heightControl);
+            _heightControllers[i].transform.SetParent(transform, false);
+        }
+
+        _heightControllers[0].transform.localPosition = new Vector3(_xOffset + HexWidth / 2, 0, _yOffset + HexHeight / 2);
+        _heightControllers[1].transform.localPosition = new Vector3(_xOffset + HexWidth / 2, 0, -_yOffset - HexHeight);
+        _heightControllers[2].transform.localPosition = new Vector3(-_xOffset - HexWidth, 0, _yOffset + HexHeight / 2);
+        _heightControllers[3].transform.localPosition = new Vector3(-_xOffset - HexWidth, 0, -_yOffset - HexHeight);
     }
 
     //Generates an individual hex
     private Hex GenerateHex(int x, int y, int i)
     {
         Vector3 position;
-        position.x = x  * HexWidth;
-        position.y = (y + (x * 0.5f) - x / 2) * HexHeight;
-        position.z = 0.0f;
+        position.x = x  * HexWidth - _xOffset;
+        position.y = 0;
+        position.z = (y + (x * 0.5f) - x / 2) * HexHeight - _yOffset;
 
         Hex hex = Instantiate<Hex>(_hexObject);
         hex.transform.SetParent(transform,false);
         hex.transform.localPosition = position;
+        hex.transform.localScale *= Scale;
 
         hex.Coords = new HexCooridnates(x, y - (x / 2));
 
