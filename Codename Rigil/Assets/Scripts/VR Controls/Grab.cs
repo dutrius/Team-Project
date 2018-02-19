@@ -4,18 +4,25 @@ using UnityEngine;
 
 public class Grab : MonoBehaviour
 {
-    private SteamVR_TrackedObject trackedObj;
-    private GameObject collidingObject;
-    private GameObject objectInHand;
+    private SteamVR_TrackedObject _trackedObj;
+    private GameObject _collidingObject;
+    private GameObject _objectInHand;
+    [SerializeField]
+    private GameObject _levelObject;
+    private Map _map;
+
+    const float DEFAULTMOVEMENT = 2.0f;
+    const int FACTIONTURN = 0;
 
     private SteamVR_Controller.Device Controller
     {
-        get { return SteamVR_Controller.Input((int)trackedObj.index); }
+        get { return SteamVR_Controller.Input((int)_trackedObj.index); }
     }
 
     void Awake()
     {
-        trackedObj = GetComponent<SteamVR_TrackedObject>();
+        _trackedObj = GetComponent<SteamVR_TrackedObject>();
+        _map = _levelObject.GetComponent<Map>();
     }
 
     public void OnTriggerEnter(Collider other)
@@ -30,31 +37,13 @@ public class Grab : MonoBehaviour
 
     public void OnTriggerExit(Collider other)
     {
-        if (!collidingObject)
+        if (!_collidingObject)
         {
             return;
         }
 
-        collidingObject = null;
+        _collidingObject = null;
     }
-
-    private void GrabObject()
-    {
-        objectInHand = collidingObject;
-        if(collidingObject.tag == "HeightControllers")
-        {
-            collidingObject = null;
-            var joint = AddFixedJoint();
-            joint.connectedBody = objectInHand.transform.parent.GetComponent<Rigidbody>();
-        }
-        else
-        {
-            collidingObject = null;
-            var joint = AddFixedJoint();
-            joint.connectedBody = objectInHand.GetComponent<Rigidbody>();
-        }
-    }
-    
     private FixedJoint AddFixedJoint()
     {
         FixedJoint fx = gameObject.AddComponent<FixedJoint>();
@@ -63,35 +52,67 @@ public class Grab : MonoBehaviour
         return fx;
     }
 
+    private void GrabObject()
+    {
+        _objectInHand = _collidingObject;
+        _collidingObject = null;
+        FixedJoint joint = AddFixedJoint();
+
+        switch (_objectInHand.tag)
+        {
+            case "HeightControllers":
+                joint.connectedBody = _objectInHand.transform.parent.GetComponent<Rigidbody>();
+                break;
+            case "Unit":
+                _map.HighlightCells(_map.GetMoveableHexes(_map.FindClosestHex(_objectInHand), DEFAULTMOVEMENT, FACTIONTURN));
+                _map.SelectCell(_map.FindClosestHex(_objectInHand));
+                _objectInHand.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
+                joint.connectedBody = _objectInHand.GetComponent<Rigidbody>();
+                break;
+            default:
+                joint.connectedBody = _objectInHand.GetComponent<Rigidbody>();
+                break;
+        }
+    }
+    
+
     private void ReleaseObject()
     {
         if (GetComponent<FixedJoint>())
         {
             GetComponent<FixedJoint>().connectedBody = null;
             Destroy(GetComponent<FixedJoint>());
-            if(objectInHand.tag != "HeightControllers")
+            switch (_objectInHand.tag)
             {
-                objectInHand.GetComponent<Rigidbody>().velocity = Controller.velocity;
-                objectInHand.GetComponent<Rigidbody>().angularVelocity = Controller.angularVelocity;
+                case "HeightControllers":
+                    break;
+                case "Unit":
+                    _map.SnapUnit(_objectInHand, _map.FindClosestHex(_objectInHand));
+                    _objectInHand.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+                    break;
+                default:
+                    _objectInHand.GetComponent<Rigidbody>().velocity = Controller.velocity;
+                    _objectInHand.GetComponent<Rigidbody>().angularVelocity = Controller.angularVelocity;
+                    break;
             }
         }
-        objectInHand = null;
+        _objectInHand = null;
     }
 
     private void SetCollidingObject(Collider col)
     {
-        if (collidingObject || !col.GetComponent<Rigidbody>())
+        if (_collidingObject || !col.GetComponent<Rigidbody>())
         {
             return;
         }
-        collidingObject = col.gameObject;
+        _collidingObject = col.gameObject;
     }
 
     void Update ()
     {
         if (Controller.GetHairTriggerDown())
         {
-            if (collidingObject)
+            if (_collidingObject)
             {
                 GrabObject();
             }
@@ -99,7 +120,7 @@ public class Grab : MonoBehaviour
         
         if (Controller.GetHairTriggerUp())
         {
-            if (objectInHand)
+            if (_objectInHand)
             {
                 ReleaseObject();
             }

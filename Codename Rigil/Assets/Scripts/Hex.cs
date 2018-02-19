@@ -36,13 +36,19 @@ public class Hex : MonoBehaviour {
         uint _numberOfPlayers = _map.GetNumberOfPlayers();
         _factionInfluence = new bool[_numberOfPlayers];
 
-        _renderer = GetComponent<SpriteRenderer>();
+        _renderer = this.transform.GetComponent<SpriteRenderer>();
 
 
 
         _movementRequirement = 1.0f;
         _movementRestriction = MovementType.Passable;
         _movementModifer = TerrainMovementModifier.Normal;
+
+        if(_cooridnates._x == 3 && _cooridnates._y == 3)
+        {
+            Colour = Color.black;
+            _movementRequirement = 5;
+        }
     }
 
     //Debug function to test functionality
@@ -67,7 +73,12 @@ public class Hex : MonoBehaviour {
         }
     }
 
-    public float MovementRequirements
+    public float MovementPointsRequired(int faction)
+    {
+        return _movementRequirement;
+    }
+
+    private float MovementRequirements
     {
         get
         {
@@ -114,8 +125,13 @@ public class Hex : MonoBehaviour {
         }
         set
         {
+            _renderer = this.transform.GetComponent<SpriteRenderer>();
             _colour = value;
             _renderer.color = _colour;
+            if (_cooridnates._x == 3 && _cooridnates._y == 3)
+            {
+                _renderer.color = Color.black;
+            }
         }
     }
 }

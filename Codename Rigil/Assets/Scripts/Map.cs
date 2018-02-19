@@ -21,11 +21,11 @@ public class Map : MonoBehaviour {
     //Used for tracking the total distance between 2 hexes
     public struct DistanceMarker
     {
-        public Hex _hex { get; private set; }
+        public HexCooridnates _hex { get; private set; }
 
         public float _distance { get; set; }
 
-        public DistanceMarker(Hex hex, float distance)
+        public DistanceMarker(HexCooridnates hex, float distance)
         {
             _hex = hex;
             _distance = distance;
@@ -42,6 +42,12 @@ public class Map : MonoBehaviour {
 
     private const float HexWidth = DefaultHexWidth * Scale;
     private const float HexHeight = DefaultHexHeight * Scale;
+
+    //Unit prefabs
+    [SerializeField]
+    private GameObject _greenFrog;
+    [SerializeField]
+    private GameObject _blueFrog;
 
     //The prefab of the hex object
     [SerializeField]
@@ -79,6 +85,15 @@ public class Map : MonoBehaviour {
                 GenerateQuadMap();
                 break;
         }
+        List<GameObject> units = new List<GameObject>();
+        units.Add(Instantiate(_greenFrog));
+        units.Add(Instantiate(_blueFrog));
+        PlaceUnits(units);
+    }
+
+    public IEnumerator Wait(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
     }
 
     //Generates a rectangular map based upon 2 uint values provided by the _dimension class variable that should be set at compile time
@@ -123,6 +138,20 @@ public class Map : MonoBehaviour {
         return hex;
     }
 
+    //Places all units on the map
+    private void PlaceUnits(List<GameObject> units)
+    {
+        foreach(GameObject unit in units)
+        {
+            Vector3 position;
+            position.x = 0;
+            position.y = this.transform.position.y;
+            position.z = 0;
+            unit.transform.position = position;
+            SnapUnit(unit, new HexCooridnates(5,0));
+        }
+    }
+
     //Selects a cell
     public void SelectCell(HexCooridnates coords)
     {
@@ -133,12 +162,21 @@ public class Map : MonoBehaviour {
     //highlights cells
     public void HighlightCells(List<HexCooridnates> coords)
     {
+        foreach(Hex hex in _hexes)
+        {
+            hex.Colour = Color.white;
+        }
         int[] index;
         foreach (HexCooridnates coordinates in coords)
         {
             index = HexCoordToArrayindex(coordinates);
             _hexes[index[0], index[1]].Colour = Color.blue;
         }
+    }
+    //Converts Array coordinates to hexcoordinates
+    private HexCooridnates ArrayIndexToHexCoord(int x, int y)
+    {
+        return new HexCooridnates(x, y - (x / 2));
     }
 
     //Converts hexcoordinates to the correct spot in the 2D array
@@ -151,11 +189,65 @@ public class Map : MonoBehaviour {
     }
 
     //returns a list of all the reachable hexes
-    private List<HexCooridnates> GetMoveableHexes(HexCooridnates coords, float remainingUnitMovement)
+    public List<HexCooridnates> GetMoveableHexes(HexCooridnates start, float MaxMovement, int currentFaction)
+    {
+        List<DistanceMarker> _reachableHexes = Flood(new DistanceMarker(start, 0), currentFaction, MaxMovement);
+
+        List<HexCooridnates> _reachableHexCoords = new List<HexCooridnates>();
+        foreach(DistanceMarker marker in _reachableHexes)
+        {
+            _reachableHexCoords.Add(marker._hex);
+        }
+        return _reachableHexCoords;
+    }
+
+    private int[,] _updateOrder = new int[,]
+{
+        {1 ,  -1},
+        {1 ,  0},
+        {0 ,  -1},
+        {0 ,  1},
+        {-1 , 0},
+        {-1 , 1}
+};
+
+    private List<DistanceMarker> Flood(DistanceMarker currentHexMarker, int currentFaction, float maxMovement)
     {
         List<DistanceMarker> _reachableHexes = new List<DistanceMarker>();
-        List<HexCooridnates> _reachableHexCoords = new List<HexCooridnates>();
-        return _reachableHexCoords;
+
+        for (int i = 0; i < 6; i++)
+        {
+            int testX = currentHexMarker._hex._x + _updateOrder[i, 0];
+            int testY = currentHexMarker._hex._y + _updateOrder[i, 1];
+
+            int[] arrayIndex = HexCoordToArrayindex(new HexCooridnates(testX, testY));
+
+            //tests if hex exists
+            if (testX >= 0 &&
+                testX < _dimensions[0] &&
+                testY >= 0 - (testX / 2) &&
+                testY  < _dimensions[1] - (testX / 2))
+            {
+                DistanceMarker marker = new DistanceMarker(new HexCooridnates(testX, testY), currentHexMarker._distance + _hexes[arrayIndex[0], arrayIndex[1]].MovementPointsRequired(currentFaction));
+                //Checks if marker is in range
+                if (marker._distance <= maxMovement && IsShorterRoute(_reachableHexes, marker))
+                {
+                    _reachableHexes.Add(marker);
+                    _reachableHexes.AddRange(Flood(marker, currentFaction, maxMovement));
+                }
+            }
+        }
+        return _reachableHexes;
+    }
+
+    private bool IsShorterRoute(List<DistanceMarker> reachableHexes, DistanceMarker current)
+    {
+        foreach (DistanceMarker old in reachableHexes)
+        {
+            if (current._hex._x == old._hex._x && current._hex._y == old._hex._y && old._distance < current._distance)
+                return false;
+        }
+        return true;
     }
 
     //Returns all targetable hexes
@@ -195,6 +287,38 @@ public class Map : MonoBehaviour {
             }
         }
         return _reachableHexCoords;
+    }
+
+    public HexCooridnates FindClosestHex(GameObject unit)
+    {
+        Transform unitTransform = unit.transform;
+        float unitX = unitTransform.position.x;
+        float unitZ = unitTransform.position.z;
+
+        int x = Mathf.RoundToInt(unitX / HexWidth) + (int)_dimensions[0] / 2;
+        int y = Mathf.RoundToInt((unitZ - (x * 0.5f - x / 2) * HexHeight) / HexHeight) + (int)_dimensions[0] / 2;
+
+        return ArrayIndexToHexCoord(x, y);
+    }
+
+    //Snaps a unit to the selected hex
+    public void SnapUnit(GameObject unit, HexCooridnates coords)
+    {
+        Transform unitTransform = unit.transform;
+
+        int[] coordinates = HexCoordToArrayindex(coords);
+
+        Vector3 position;
+        position.x = coordinates[0] * HexWidth - _xOffset;
+        position.y = this.transform.position.y;
+        position.z = (coordinates[1] + (coordinates[0] * 0.5f) - coordinates[0] / 2) * HexHeight - _yOffset;
+        unitTransform.position = position;
+
+        Vector3 rotation;
+        rotation.x = 270;
+        rotation.y = 0;
+        rotation.z = unitTransform.rotation.eulerAngles.z;
+        unitTransform.rotation = Quaternion.Euler(rotation);
     }
 
     public uint GetNumberOfPlayers()
